@@ -12,9 +12,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
+import net.logstash.logback.argument.StructuredArguments;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -40,19 +44,19 @@ public class LoggingFilter extends OncePerRequestFilter {
             filterChain.doFilter(wrappedRequest, wrappedResponse);
         } catch (Exception ex) {
             errorMessage = ex.getMessage();
-            throw ex; // importante relanzar
+            throw ex;
         } finally {
 
             long duration = System.currentTimeMillis() - startTime;
 
-
             String responseBody = new String(
                     wrappedResponse.getContentAsByteArray(),
-                    StandardCharsets.UTF_8);
+                    StandardCharsets.UTF_8
+            );
 
             int status = wrappedResponse.getStatus();
 
-            // Si no hubo excepción pero es error HTTP
+            // Detectar errores HTTP sin excepción
             if (status >= 400) {
 
                 Object exAttr = request.getAttribute(
@@ -70,60 +74,53 @@ public class LoggingFilter extends OncePerRequestFilter {
                 }
 
                 if (errorMessage == null || errorMessage.isBlank()) {
-                    errorMessage = "HTTP Error" + status;
+                    errorMessage = "HTTP Error " + status;
                 }
             }
 
-            // Construcción headers JSON
-            StringBuilder headersBuilder = new StringBuilder("{");
+            // Construir headers 
+            Map<String, String> headersMap = new HashMap<>();
 
             Collections.list(request.getHeaderNames()).forEach(headerName -> {
-
-                // Evitar exponer tokens sensibles
                 if (!headerName.equalsIgnoreCase("authorization")) {
-
-                    String headerValue = request.getHeader(headerName);
-
-                    headersBuilder.append("\"")
-                            .append(headerName)
-                            .append("\":\"")
-                            .append(headerValue)
-                            .append("\",");
+                    headersMap.put(headerName, request.getHeader(headerName));
                 }
             });
 
-            if (headersBuilder.length() > 1 &&
-                headersBuilder.charAt(headersBuilder.length() - 1) == ',') {
-                headersBuilder.deleteCharAt(headersBuilder.length() - 1);
-            }
-
-            headersBuilder.append("}");
-
-
-            String safeResponse = responseBody == null || responseBody.isBlank()
-                    ? "null"
-                    : responseBody.replace("\"", "'");
-
-            String safeError = errorMessage == null
-                    ? "null"
-                    : errorMessage.replace("\"", "'");
-
-            String logMessage = String.format(
-                     "{response=\"%s\" codigo=\"%d\" method=\"%s\" path=\"%s\" durationMs=\"%d\" " +
-                    "responseBody=\"%s\", errorMessage=\"%s\"}",
-                    safeResponse,
-                    status,
-                    request.getMethod(),
-                    request.getRequestURI(),
-                    duration,
-                    safeResponse,
-                    safeError
-            );
-
-            if (status >= 400) {
-                log.error(logMessage);
+            // LOG ESTRUCTURADO (JSON automático)
+            if (status >= 500) {
+                log.error("HTTP_REQUEST",
+                        StructuredArguments.keyValue("response", "error"),
+                        StructuredArguments.keyValue("codigo", status),
+                        StructuredArguments.keyValue("method", request.getMethod()),
+                        StructuredArguments.keyValue("path", request.getRequestURI()),
+                        StructuredArguments.keyValue("durationMs", duration),
+                        StructuredArguments.keyValue("responseBody", responseBody),
+                        StructuredArguments.keyValue("errorMessage", errorMessage),
+                        StructuredArguments.keyValue("headers", headersMap)
+                );
+            } else if (status >= 400) {
+                log.warn("HTTP_REQUEST",
+                        StructuredArguments.keyValue("response", "error"),
+                        StructuredArguments.keyValue("codigo", status),
+                        StructuredArguments.keyValue("method", request.getMethod()),
+                        StructuredArguments.keyValue("path", request.getRequestURI()),
+                        StructuredArguments.keyValue("durationMs", duration),
+                        StructuredArguments.keyValue("responseBody", responseBody),
+                        StructuredArguments.keyValue("errorMessage", errorMessage),
+                        StructuredArguments.keyValue("headers", headersMap)
+                );
             } else {
-                log.info(logMessage);
+                log.info("HTTP_REQUEST",
+                        StructuredArguments.keyValue("response", "respuesta exitosa"),
+                        StructuredArguments.keyValue("codigo", status),
+                        StructuredArguments.keyValue("method", request.getMethod()),
+                        StructuredArguments.keyValue("path", request.getRequestURI()),
+                        StructuredArguments.keyValue("durationMs", duration),
+                        StructuredArguments.keyValue("responseBody", responseBody),
+                        StructuredArguments.keyValue("errorMessage", errorMessage),
+                        StructuredArguments.keyValue("headers", headersMap)
+                );
             }
 
             wrappedResponse.copyBodyToResponse();
