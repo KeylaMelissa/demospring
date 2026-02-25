@@ -90,6 +90,7 @@ public class LoggingFilter extends OncePerRequestFilter {
             // LOG ESTRUCTURADO (JSON automático)
             if (status >= 500) {
                 log.error("HTTP_REQUEST",
+                        StructuredArguments.keyValue("level", "error"),
                         StructuredArguments.keyValue("response", "error"),
                         StructuredArguments.keyValue("codigo", status),
                         StructuredArguments.keyValue("method", request.getMethod()),
@@ -101,6 +102,7 @@ public class LoggingFilter extends OncePerRequestFilter {
                 );
             } else if (status >= 400) {
                 log.warn("HTTP_REQUEST",
+                        StructuredArguments.keyValue("level", "error"),
                         StructuredArguments.keyValue("response", "error"),
                         StructuredArguments.keyValue("codigo", status),
                         StructuredArguments.keyValue("method", request.getMethod()),
@@ -112,6 +114,7 @@ public class LoggingFilter extends OncePerRequestFilter {
                 );
             } else {
                 log.info("HTTP_REQUEST",
+                        StructuredArguments.keyValue("level", "info"),
                         StructuredArguments.keyValue("response", "respuesta exitosa"),
                         StructuredArguments.keyValue("codigo", status),
                         StructuredArguments.keyValue("method", request.getMethod()),
