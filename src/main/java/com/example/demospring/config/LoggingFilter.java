@@ -12,6 +12,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import net.logstash.logback.argument.StructuredArguments;
 
 import java.io.IOException;
@@ -56,6 +59,16 @@ public class LoggingFilter extends OncePerRequestFilter {
 
             int status = wrappedResponse.getStatus();
 
+            // obtncion de parmetros deel body
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode json = mapper.readTree(responseBody);
+
+            String mensaje = json.get("mensaje").asText();
+            String id = json.get("idTransaccion").asText();
+
+
+
+
             // Detectar errores HTTP sin excepción
             if (status >= 400) {
 
@@ -98,7 +111,9 @@ public class LoggingFilter extends OncePerRequestFilter {
                         StructuredArguments.keyValue("durationMs", duration),
                         StructuredArguments.keyValue("responseBody", responseBody),
                         StructuredArguments.keyValue("errorMessage", errorMessage),
-                        StructuredArguments.keyValue("headers", headersMap)
+                        StructuredArguments.keyValue("headers", headersMap),
+                        StructuredArguments.keyValue("mensaje", mensaje),
+                        StructuredArguments.keyValue("idTransaccion", id)
                 );
             } else if (status >= 400) {
                 log.warn("HTTP_REQUEST",
@@ -110,7 +125,9 @@ public class LoggingFilter extends OncePerRequestFilter {
                         StructuredArguments.keyValue("durationMs", duration),
                         StructuredArguments.keyValue("responseBody", responseBody),
                         StructuredArguments.keyValue("errorMessage", errorMessage),
-                        StructuredArguments.keyValue("headers", headersMap)
+                        StructuredArguments.keyValue("headers", headersMap),
+                        StructuredArguments.keyValue("mensaje", mensaje),
+                        StructuredArguments.keyValue("idTransaccion", id)
                 );
             } else {
                 log.info("HTTP_REQUEST",
@@ -122,8 +139,10 @@ public class LoggingFilter extends OncePerRequestFilter {
                         StructuredArguments.keyValue("durationMs", duration),
                         StructuredArguments.keyValue("responseBody", responseBody),
                         StructuredArguments.keyValue("errorMessage", errorMessage),
-                        StructuredArguments.keyValue("headers", headersMap)
-                );
+                        StructuredArguments.keyValue("headers", headersMap),
+                        StructuredArguments.keyValue("mensaje", mensaje),
+                        StructuredArguments.keyValue("idTransaccion", id)               
+                     );
             }
 
             wrappedResponse.copyBodyToResponse();
