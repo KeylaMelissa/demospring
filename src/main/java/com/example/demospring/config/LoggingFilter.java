@@ -50,6 +50,10 @@ public class LoggingFilter extends OncePerRequestFilter {
             throw ex;
         } finally {
 
+            if (request.getRequestURI().startsWith("/actuator")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             long duration = System.currentTimeMillis() - startTime;
 
             String responseBody = new String(
@@ -60,14 +64,22 @@ public class LoggingFilter extends OncePerRequestFilter {
             int status = wrappedResponse.getStatus();
 
             // obtncion de parmetros deel body
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode json = mapper.readTree(responseBody);
+           ObjectMapper mapper = new ObjectMapper();
 
-            String mensaje = json.path("mensaje").asText("");
-         
-            String id = json.path("idTransaccion").asText("");
+            String mensaje = "";
+            String id = "";
 
+            if (responseBody != null && !responseBody.isBlank()) {
+                try {
+                    JsonNode json = mapper.readTree(responseBody);
 
+                    mensaje = json.path("mensaje").asText("");
+                    id = json.path("idTransaccion").asText("");
+
+                } catch (Exception e) {
+                    log.warn("No se pudo parsear responseBody como JSON");
+                }
+            }
 
 
             // Detectar errores HTTP sin excepción
