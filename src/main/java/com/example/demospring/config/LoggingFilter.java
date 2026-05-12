@@ -63,8 +63,9 @@ public class LoggingFilter extends OncePerRequestFilter {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode json = mapper.readTree(responseBody);
 
-            String mensaje = json.get("mensaje").asText();
-            String id = json.get("idTransaccion").asText();
+            String mensaje = json.path("mensaje").asText("");
+         
+            String id = json.path("idTransaccion").asText("");
 
 
 
