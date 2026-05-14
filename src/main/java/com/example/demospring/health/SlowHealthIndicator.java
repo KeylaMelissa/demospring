@@ -4,7 +4,7 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 
-/* 
+
 @Component
 public class SlowHealthIndicator implements HealthIndicator {
 
@@ -21,4 +21,4 @@ public class SlowHealthIndicator implements HealthIndicator {
                 .withDetail("delay", "70 segundos")
                 .build();
     }
-}*/
+}
