@@ -12,13 +12,13 @@ public class SlowHealthIndicator implements HealthIndicator {
     public Health health() {
 
        try {
-            Thread.sleep(70000); // 70 segundos
+            Thread.sleep(5000); // 5 segundos
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
 
         return Health.up()
-                .withDetail("delay", "70 segundos")
+                .withDetail("delay", "5 segundos")
                 .build();
     }
 }
