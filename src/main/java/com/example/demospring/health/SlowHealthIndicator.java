@@ -5,7 +5,7 @@ import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 
 
-@Component
+@Component("slow")
 public class SlowHealthIndicator implements HealthIndicator {
 
     @Override
